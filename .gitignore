@@ -1,0 +1,14 @@
+# macOS metadata
+.DS_Store
+
+# temp files
+temp.wav
+*.txt
+*.vtt
+*.srt
+*.json
+
+# optional: IDE/Editor files
+*.swp
+.idea/
+.vscode/
