@@ -2,17 +2,43 @@
 
 # === CONFIGURATION ===
 
-INPUT_AUDIO="$1"
 WHISPER_BIN="whisper-cpp"
 MODEL_PATH="$HOME/Documents/whisper/models/ggml-large-v3.bin"
 OUTPUT_DIR="$HOME/Documents/TranscribedNotes"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEFAULT_CONFIG="$SCRIPT_DIR/config.conf"
 
+# === RECORDING MODE ===
+
+if [[ "$1" == "--record" && -n "$2" ]]; then
+  NAME="$2"
+  INPUT_AUDIO="$HOME/Documents/whisper/tmp/$NAME.m4a"
+  mkdir -p "$(dirname "$INPUT_AUDIO")"
+
+  echo "🎙️ Press ENTER to start recording from microphone..."
+  read
+  echo "⏺️ Recording... Press ENTER again to stop."
+
+  ffmpeg -f avfoundation -i ":0" -ac 1 -ar 16000 -y "$INPUT_AUDIO" > /dev/null 2>&1 &
+  FFMPEG_PID=$!
+
+  read
+  echo "⏹️ Stopping recording..."
+  kill -INT $FFMPEG_PID
+  wait $FFMPEG_PID
+
+  echo "✅ Recording saved to: $INPUT_AUDIO"
+  set -- "$INPUT_AUDIO"
+fi
+
 # === VALIDATION ===
 
+INPUT_AUDIO="$1"
+
 if [ -z "$INPUT_AUDIO" ]; then
-  echo "Usage: transcribe.sh path/to/audio_file.m4a"
+  echo "Usage:"
+  echo "  ./transcribe.sh path/to/file.m4a"
+  echo "  ./transcribe.sh --record <name>     # Start mic recording and save to ~/whisper/tmp/<name>.m4a"
   exit 1
 fi
 
@@ -54,3 +80,4 @@ fi
 
 # Clean up temp WAV
 rm -f "$WAV_FILE"
+
